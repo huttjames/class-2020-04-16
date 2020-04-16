@@ -46,6 +46,22 @@ We are using the [**tidymodels** collection of packages](https://www.tidymodels.
 
 Useful functions include `logistic_reg()`, `set_engine()`, and `fit()`.
 
+```{r s1, echo=FALSE}
+
+logistic_mod <- logistic_reg() %>%
+  set_engine("glm") 
+
+logistic_fit <- fit(logistic_mod, 
+                    vote ~ ideology + income + gender + race, 
+                    data = nes)
+
+logistic_fit$fit %>%
+  tidy(conf.int = TRUE) %>%
+  select(term, estimate, conf.low, conf.high)
+
+```
+
+
 Interpret the coefficient of `income`.
 
 Write a sentence to your smart-but-not-mathematical boss which explains the association of income with preference for the Democratic candidate. Include a notion of uncertainty.
@@ -58,6 +74,24 @@ Write a sentence to your smart-but-not-mathematical boss which explains the asso
 
 Hint: In addition to the functions you used in Scene 1, you may find `set_mode()` and `prp()` to be helpful.
 
+```{r s2, echo=FALSE}
+
+tree_mod <- decision_tree(cost_complexity = 0.01) %>%
+  set_engine("rpart", 
+             model = TRUE) %>%
+  set_mode("classification") 
+
+vote_tree <- fit(tree_mod,
+                 vote ~ ideology + income + gender + race, 
+                 data = nes)
+
+vote_tree$fit %>%
+  prp(extra = 6, varlen = 0, faclen = 0)
+
+
+```
+
+
 Print the fitted model.
 
 Plot the fitted model. You may find the `prp()` function to be useful. I like `extra = 6` as an argument. Read the help page to understand what it means.
@@ -65,6 +99,17 @@ Plot the fitted model. You may find the `prp()` function to be useful. I like `e
 Write two sentences explaining to your smart-but-not-mathematical boss what the model means and how he should interpret it. Make sure to discuss why some variables, like gender, are not used in the model. He thinks that gender matters to voting!
 
 Optional: Can you write a simple dplr pipe which does, more or less, what the CART is doing, at least for the first node, and then confirms the numbers in the plot?
+
+
+```{r}
+nes %>%
+filter(ideology < 4) %>%
+  summarise(mean = mean(dvote))
+
+ggplot(nes, aes(ideology, dvote)) + geom_point() + geom_jitter()
+
+```
+
 
 
 
@@ -80,6 +125,25 @@ Print out and interpret the model.
 How many trees did the forest use? Would we get better results if we used a different number of trees?
 
 What is OOB error?
+
+```{r s3, echo=FALSE}
+forest_mod <- rand_forest(trees = 500) %>%
+  set_engine("randomForest") %>%
+  set_mode("classification")
+
+vote_forest <- fit(forest_mod, 
+                   vote ~ ideology + income + gender + race, 
+                   data = nes)
+
+vote_forest
+
+tibble(`Error rate` = vote_forest$fit$err.rate[, "OOB"],
+       Trees = 1:500) %>%
+  ggplot(aes(x = Trees, y = `Error rate`)) +
+  geom_line() +
+  theme_classic()
+
+```
 
 
 
